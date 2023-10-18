@@ -1,37 +1,38 @@
 import { Meteor } from 'meteor/meteor';
-import { LinksCollection } from '/imports/api/links';
 
-async function insertLink({ title, url }) {
-  await LinksCollection.insertAsync({ title, url, createdAt: new Date() });
-}
+import { TasksCollection } from "/imports/db/TasksCollection.js";
 
-Meteor.startup(async () => {
-  // If the Links collection is empty, add some data.
-  if (await LinksCollection.find().countAsync() === 0) {
-    await insertLink({
-      title: 'Do the Tutorial',
-      url: 'https://www.meteor.com/tutorials/react/creating-an-app',
-    });
+import { Accounts } from 'meteor/accounts-base'
+import '/imports/api/tasksMethods'
 
-    await insertLink({
-      title: 'Follow the Guide',
-      url: 'https://guide.meteor.com',
-    });
+const SEED_USERNAME = 'admin'
+const SEED_PASSWORD = 'admin'
 
-    await insertLink({
-      title: 'Read the Docs',
-      url: 'https://docs.meteor.com',
-    });
+const insertTask = (taskText, user) => TasksCollection.insert({
+  text: taskText,
+  userId: user._id,
+  createdAt: new Date(),
+})
 
-    await insertLink({
-      title: 'Discussions',
-      url: 'https://forums.meteor.com',
-    });
+Meteor.startup(() => {
+  if (!Accounts.findUserByUsername(SEED_USERNAME)) {
+    Accounts.createUser({
+      username: SEED_USERNAME,
+      password: SEED_PASSWORD
+    })
   }
 
-  // We publish the entire Links collection to all clients.
-  // In order to be fetched in real-time to the clients
-  Meteor.publish("links", function () {
-    return LinksCollection.find();
-  });
-});
+  const user = Accounts.findUserByUsername(SEED_USERNAME)
+
+  if (TasksCollection.find().count() === 0) {
+    [
+      'First Task',
+      'Second Task',
+      'Third Task',
+      'Fourth Task',
+      'Fifth Task',
+      'Sixth Task',
+      'Seventh Task'
+    ].forEach(taskText => insertTask(taskText, user))
+  }
+})
