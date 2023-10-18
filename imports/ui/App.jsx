@@ -22,23 +22,30 @@ export const App = () => {
 
   const pendingOnlyFilter = { ...hideCompletedFilter, ...userFilter };
 
-  const tasks = useTracker(() => {
-    if (!user) {
-      return [];
-    }
+  const { tasks, pendingTasksCount, isLoading } = useTracker(() => {
+    const noDataAvailable = { tasks: [], pendingTasksCount: 0 };
+    if (!Meteor.user()) return noDataAvailable;
 
-    return TasksCollection.find(
+    const handler = Meteor.subscribe("tasks");
+
+    if (!handler.ready()) return { ...noDataAvailable, isLoading: true };
+
+    const tasks = TasksCollection.find(
       hideCompleted ? pendingOnlyFilter : userFilter,
-      { sort: { createdAt: -1 } }
+      {
+        sort: { createdAt: -1 },
+      }
     ).fetch();
+
+    const pendingTasksCount = TasksCollection.find(pendingOnlyFilter).count();
+
+    return { tasks, pendingTasksCount };
   });
 
-  const pendingtasksCount = useTracker(() => {
-    if (!user) return 0;
-    return TasksCollection.find(pendingOnlyFilter).count();
-  });
-
-  const pendingTasksTitle = `${pendingtasksCount ? pendingtasksCount : 0}`;
+  // const pendingtasksCount = useTracker(() => {
+  //   if (!user) return 0;
+  //   return TasksCollection.find(pendingOnlyFilter).count();
+  // });
 
   const logout = () => Meteor.logout();
   return (
@@ -46,7 +53,7 @@ export const App = () => {
       <header>
         <div className="app-bar">
           <div className="app-header">
-            <h1>To Do List ({pendingTasksTitle})</h1>
+            <h1>To Do List ({pendingTasksCount ?? 0})</h1>
           </div>
         </div>
       </header>
@@ -62,6 +69,8 @@ export const App = () => {
                 {hideCompleted ? "Show All" : "Hide Compeleted"}
               </button>
             </div>
+
+            {isLoading && <div className="loading">loading...</div>}
             <ul className="tasks">
               {tasks.map((task) => (
                 <Task

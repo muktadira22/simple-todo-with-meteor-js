@@ -4,6 +4,7 @@ import { TasksCollection } from "/imports/db/TasksCollection.js";
 
 import { Accounts } from 'meteor/accounts-base'
 import '/imports/api/tasksMethods'
+import '/imports/api/tasksPublications'
 
 const SEED_USERNAME = 'admin'
 const SEED_PASSWORD = 'admin'
